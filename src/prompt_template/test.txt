@@ -1,0 +1,10 @@
+"""
+    please create a new project called 'dummy-project-2',
+    split the DatasetVersion 01944abb-2724-732c-bdac-19d8f94088ec into 3 DatasetVersions train, test, val and 
+    attach these datasetversions to the project 'dummy-project-2', 
+    create an experiment
+    attach the dataset versions created to the experiment
+    fetch an object detection model
+    attach the modelversion to the experiment
+    if everything is fine, launch the experiment training
+"""

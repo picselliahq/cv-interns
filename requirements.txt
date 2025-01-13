@@ -1,0 +1,6 @@
+smolagents
+picsellia
+Pillow
+transformers
+torch
+numpy
