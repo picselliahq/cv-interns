@@ -12,10 +12,11 @@ import requests
 from transformers import CLIPProcessor, CLIPModel
 from typing import List 
 import logging
+from picsellia.sdk.asset import MultiAsset
 
 class DatasetVersionEmbeddingTool(Tool):
     name = "dataset_version_outliers_detector"
-    description = "A tool to compute embeddings for a dataset version and find outliers."
+    description = "A tool to compute embeddings for a dataset version and find outliers. Then tags this assets a `agent-suspects-outlier` in the Dataset to be retrieved later."
     inputs = {
         "client": {
             "type": "object",
@@ -25,11 +26,6 @@ class DatasetVersionEmbeddingTool(Tool):
             "type": "string",
             "description": "ID of the dataset version to analyze",
         },
-        "search_type": {
-            "type": "string",
-            "description": "The type of outlier detection we want to use (`centroid` or `dbscan`)",
-            "nullable": "true"
-        }
     }
     output_type = "object"
 
@@ -57,21 +53,19 @@ class DatasetVersionEmbeddingTool(Tool):
             print(f"Error processing asset {asset.filename}: {e}")
             return None
 
-    def forward(self, client: Client, dataset_version_id: str, search_type: str = "centroid") -> List[Asset]:
+    def forward(self, client: Client, dataset_version_id: str) -> bool:
         """
         Processes a dataset version to find outlier assets using the specified search type.
 
         This method computes embeddings for each asset in the dataset version and then applies
-        outlier detection algorithms based on the search type provided. It supports 'centroid'
-        for centroid-based outlier detection and 'dbscan' for density-based spatial clustering.
+        outlier detection algorithms based on the search type provided.
 
         Args:
             client (Client): Authenticated Picsellia client instance.
             dataset_version_id (str): ID of the dataset version to analyze.
-            search_type (str, optional): The type of outlier detection to use. Defaults to 'centroid'.
 
         Returns:
-            List[Asset]: A list of outlier assets identified by the chosen outlier detection method.
+            bool: True if outliers found, False if not.
 
         Raises:
             ValueError: If the dataset version with the given ID is not found.
@@ -90,31 +84,19 @@ class DatasetVersionEmbeddingTool(Tool):
             raise ValueError(f"Dataset version with id {dataset_version_id} not found.")
 
         embeddings_array = np.array(self.embeddings)
-
-        if search_type == 'centroid':            
-            centroid = np.mean(embeddings_array, axis=0)
-            centroid_distances = np.linalg.norm(embeddings_array - centroid, axis=1)
-            
-            outlier_threshold = np.percentile(centroid_distances, 85)
-            outliers = np.where(centroid_distances > outlier_threshold)[0]
-            
-            outlier_assets = [assets[i] for i in outliers]
-            return outlier_assets
+        centroid = np.mean(embeddings_array, axis=0)
+        centroid_distances = np.linalg.norm(embeddings_array - centroid, axis=1)
         
-        elif search_type == 'dbscan':
-            dbscan = DBSCAN(metric='euclidean')
-            labels = dbscan.fit_predict(embeddings_array)
-
-            # Identify outliers (label = -1)
-            outlier_indices = np.where(labels == -1)[0]
-            logging.info(f"Identified {len(outlier_indices)} outliers using DBSCAN.")
-
-            outlier_assets = [assets[i] for i in outlier_indices]
-            logging.info("Outlier detection complete.")
-            return outlier_assets
-        else:
-            raise ValueError("Incorrect search type. Options are `centroid` or `dbscan`")
-
+        outlier_threshold = np.percentile(centroid_distances, 85)
+        outliers = np.where(centroid_distances > outlier_threshold)[0]
+        
+        outlier_assets = [assets[i] for i in outliers]
+        assets = MultiAsset(dataset_version.connexion, dataset_version.id, outlier_assets)
+        tag = dataset_version.get_or_create_asset_tag('agent-suspects-outlier')
+        assets.add_tags(tag)
+            
+        
+        return f"found {len(outlier_assets)} outliers."
 
 class AssetsTaggingTool(Tool):
     name = "asset_tagger"

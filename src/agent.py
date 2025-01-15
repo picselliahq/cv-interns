@@ -86,7 +86,7 @@ model = HfApiModel(model_name, token=os.getenv("HF_TOKEN"))
 picsellia_ai_hr_workforce = CodeAgent(
     tools=data_engineer_toolset+data_scientist_toolset,
     model=model, 
-    max_steps=10
+    max_steps=6
 )
 
 # picsellia_ai_hr_workforce.run(
@@ -100,6 +100,6 @@ picsellia_ai_hr_workforce = CodeAgent(
 # )
 
 picsellia_ai_hr_workforce.run(
-    "find outliers in DatasetVersion 01944abb-2724-732c-bdac-19d8f94088ec and tag them as `outlier`"
+    "find outliers in DatasetVersion 01944abb-2724-732c-bdac-19d8f94088ec"
 )
  
