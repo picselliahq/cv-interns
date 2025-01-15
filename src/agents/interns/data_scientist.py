@@ -11,16 +11,20 @@ from typing import List, Generator
 import time 
 from smolagents import tools, Tool, ManagedAgent
 import numpy as np
-
+import os
 from smolagents import CodeAgent, HfApiModel, LiteLLMModel, DuckDuckGoSearchTool
 from tools.dataset.read import list_dataset_assets_tool, list_dataset_labels_tool, fetch_dataset_version_by_id_tool,check_if_label_exists
 from tools.dataset.init import set_inference_type_tool, picsellia_connection_tool
 from tools.dataset.create import create_train_test_val_dataset_version
+from tools.dataset.analyze import dataset_version_outliers_detector, asset_tagger
 from tools.project.write import create_picsellia_project, attach_dataset_to_project
+from tools.project.read import get_project_by_name
 from tools.experiment.write import create_picsellia_experiment
 from tools.models.search import  retrieve_object_detection_model_version # list_available_public_models_for_task
 from tools.experiment.actions import launch_training_tool
 from tools.experiment.write import create_picsellia_experiment, attach_model_version_to_experiment, attach_dataset_to_experiment
+from tools.experiment.read import list_evaluations_and_metrics_by_label
+from tools.project.read import list_experiment_attachments_and_logs, list_projects, list_experiments, get_experiment
 
 system_prompt = """
 You are a Picsellia platform Data Scientist and Computer Vision assistant who can solve any task using code blobs. You will be given a task to solve as best you can.
@@ -90,19 +94,20 @@ dataset_toolset = [
     list_dataset_assets_tool, list_dataset_labels_tool, fetch_dataset_version_by_id_tool,
     check_if_label_exists, 
     set_inference_type_tool, picsellia_connection_tool,
-    create_train_test_val_dataset_version,
+    create_train_test_val_dataset_version, dataset_version_outliers_detector, asset_tagger
 ]
 
 project_tool_set = [
-    create_picsellia_project, attach_dataset_to_project,
+    get_project_by_name, create_picsellia_project, attach_dataset_to_project,
     retrieve_object_detection_model_version, launch_training_tool,
     create_picsellia_experiment,attach_dataset_to_experiment,
-    attach_model_version_to_experiment, create_train_test_val_dataset_version
+    attach_model_version_to_experiment, create_train_test_val_dataset_version,
+    get_experiment, list_experiment_attachments_and_logs, list_projects, list_experiments, list_evaluations_and_metrics_by_label
 ]
 
 toolset = dataset_toolset + project_tool_set
 
-model = HfApiModel("meta-llama/Llama-3.3-70B-Instruct", token="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")
+model = HfApiModel("meta-llama/Llama-3.3-70B-Instruct", token=os.environ["HF_TOKEN"])
 
 data_scientist_intern = CodeAgent(
     model=model,

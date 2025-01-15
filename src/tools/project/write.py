@@ -1,6 +1,6 @@
 from smolagents import Tool
 import os
-from picsellia import Client, DatasetVersion, Label, Project
+from picsellia import Client, DatasetVersion, Label, Project, Experiment
 from picsellia.types.schemas import InferenceType
 from typing import List
 import picsellia 
@@ -112,6 +112,78 @@ class AttachDatasetVersionToProjectTool(Tool):
         except Exception as e:
             raise ValueError(f"Failed to attach dataset version to project: {str(e)}")
 
+
+class CreateExperimentFromPastExperimentTool(Tool):
+    """
+    Creates a new Picsellia experiment by cloning settings from a past experiment.
+
+    This tool allows users to create a new experiment while inheriting configurations 
+    and settings from an existing experiment, making it easier to iterate on previous work.
+
+    Input:
+        project (Project):
+            - Type: `object` 
+            - Description: The Picsellia project where the new experiment will be created.
+        base_experiment (Experiment):
+            - Type: `object`
+            - Description: The source experiment to clone settings from.
+        name (str):
+            - Type: `string`
+            - Description: Name for the new experiment.
+
+    Output:
+        output_type (object):
+            A newly created Picsellia experiment object with settings inherited from the base experiment.
+
+    Example:
+        ```
+        # Example usage
+        project = some_project_object
+        base_experiment = some_experiment_object
+        name = "iteration-2"
+
+        # Create new experiment from base experiment
+        new_experiment = tool.forward(project, base_experiment, name)
+        print(new_experiment)
+        ```
+
+    Notes:
+        - The tool copies relevant settings like hyperparameters, model architecture, etc.
+        - Inherits files, parameters, and labelmap from the base experiment
+        - Dataset attachments and results are not copied over
+        - Ensures proper error handling during experiment creation
+    """
+    name = "create_experiment_from_base_experiment"
+    description = """
+    Creates a new Picsellia experiment by cloning settings from a base experiment. Useful for 
+    iterating on previous experiments while maintaining consistent configurations.
+    """
+    inputs = {
+        "project": {
+            "type": "object",
+            "description": "The Picsellia project where the new experiment will be created.",
+        },
+        "base_experiment": {
+            "type": "object", 
+            "description": "The source experiment to clone settings from.",
+        },
+        "name": {
+            "type": "string",
+            "description": "Name for the new experiment.",
+        }
+    }
+    output_type = "object"
+
+    def forward(self, project: Project, base_experiment: Experiment, name: str) -> Experiment:
+        try:
+            # Create new experiment using base_experiment parameter
+            new_experiment = project.create_experiment(
+                name=name,
+                base_experiment=base_experiment
+            )
+            return new_experiment
+        except Exception as e:
+            raise ValueError(f"Failed to create new experiment from base experiment: {str(e)}")
 
 
 
