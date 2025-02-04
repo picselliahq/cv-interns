@@ -86,20 +86,21 @@ model = HfApiModel(model_name, token=os.getenv("HF_TOKEN"))
 picsellia_ai_hr_workforce = CodeAgent(
     tools=data_engineer_toolset+data_scientist_toolset,
     model=model, 
-    max_steps=6
+    max_steps=6,
+    additional_authorized_imports=["seaborn", "matplotlib"]
 )
 
 # picsellia_ai_hr_workforce.run(
 #     "search for data with tags `dummy-tag`, create a dataset version `demo-val`and pre-annotate the cars"
 # )
 
-# picsellia_ai_hr_workforce.run(
-#     """
-#     how good are we at detecting cars in the `dummy-project-3`, 
-#     """
-# )
-
 picsellia_ai_hr_workforce.run(
-    "find outliers in DatasetVersion 01944abb-2724-732c-bdac-19d8f94088ec"
+    """
+    can you generate the confusion matrix of the experiment 0194a879-cb3e-74d1-961e-32a382e7e19a, 
+    """
 )
+
+# picsellia_ai_hr_workforce.run(
+#     "find outliers in DatasetVersion 01944abb-2724-732c-bdac-19d8f94088ec"
+# )
  
